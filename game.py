@@ -2,6 +2,9 @@ class Game:
 	def __init__(self, players):
 		self.finished = False
 		self.players = players
+		for player in players:
+			player.join_game(self)
+
 		self.to_next = False
 		self.curr_player = 0
 		self.winner = None
