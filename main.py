@@ -41,8 +41,15 @@ class App:
 
 	def new_game(self):
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		s.bind(('localhost', 8889))
+		s.connect(('8.8.8.8', 53))
+		self_ip = s.getsockname()[0]
+
+		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		s.bind((self_ip, 0))
 		s.listen(1)
+
+		print(self_ip, s.getsockname()[1])
+
 		conn, addr = s.accept()
 		player1 = LocalPlayer(conn)
 		player2 = SyncPlayer(conn)
@@ -51,7 +58,11 @@ class App:
 	def join_game(self):
 #TODO: initialize a connection from given activation key
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		s.connect(('localhost', 8889))
+
+		ip = input('Remote IP address: ')
+		port = input('Remote port: ')
+		s.connect((ip, int(port)))
+
 		player1 = SyncPlayer(s)
 		player2 = LocalPlayer(s)
 		return Game([player1,player2])
