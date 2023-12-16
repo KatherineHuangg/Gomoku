@@ -62,7 +62,7 @@ class Game:
 		row = 19 - int(row)
 		col = ord(col.upper()) - ord('A')
 
-		if not self.is_in_range((row, col)):
+		if not self.is_in_range((row, col)) or self.board[row][col] != 0:
 			print('Invalid Input')
 			return
 
