@@ -1,29 +1,31 @@
 from game import Game
+from ui import CLI, GUI
 import socket
 from player import *
 
 class App:
-	def __init__(self):
-		pass
+	def __init__(self, ui):
+		self.ui = ui
 
 	def run(self):
 		toQuit = False
 		while not toQuit:
-			self.present_menu()
+			self.ui.present_title('Welcome to Gomoku')
 
 			game = None
-			match input('Choose action: '):
-				case 'N' | 'n':
+			menu = [
+				'New Game',
+				'Join Game',
+				'Quit',
+			]
+			match self.ui.present_menu_and_wait(menu, 'Choose action: '):
+				case 0:
 					game = self.new_game()
-				case 'J' | 'j':
+				case 1:
 					game = self.join_game()
-				case 'Q' | 'q':
-					toQuit = True
 				case _:
-					print('Invalid command')
-
-			if game is None:
-				continue
+					self.ui.present_error('Invalid command')
+					continue
 
 			while not game.is_finish():
 				game.present()
@@ -32,12 +34,6 @@ class App:
 			
 			game.present()
 			game.present_result()
-
-	def present_menu(self):
-		print('Welcome to Gomoku')
-		print('(N)ew Game')
-		print('(J)oin Game')
-		print('(Q)uit Game')
 
 	def new_game(self):
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -48,34 +44,26 @@ class App:
 		s.bind((self_ip, 0))
 		s.listen(1)
 
-		print(self_ip, s.getsockname()[1])
+		self.ui.present_conn_info(self_ip, s.getsockname()[1])
 
+		self.ui.hold('Wait for opponent to join')
 		conn, addr = s.accept()
-		player1 = LocalPlayer(conn)
-		player2 = SyncPlayer(conn)
-		return Game([player1,player2])
+		self.ui.unhold()
+
+		player1 = LocalPlayer(conn, self.ui)
+		player2 = SyncPlayer(conn, self.ui)
+		return Game([player1,player2], self.ui)
 
 	def join_game(self):
-#TODO: initialize a connection from given activation key
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-		ip = input('Remote IP address: ')
-		port = input('Remote port: ')
+		ip, port = self.ui.ask_for_conn_info()
 		s.connect((ip, int(port)))
 
-		player1 = SyncPlayer(s)
-		player2 = LocalPlayer(s)
-		return Game([player1,player2])
+		player1 = SyncPlayer(s, self.ui)
+		player2 = LocalPlayer(s, self.ui)
+		return Game([player1,player2], self.ui)
 
 if __name__ == '__main__':
-	'''game = Game([0, 0])
-
-	while not game.is_finish():
-		game.present()
-		game.next_player()
-		game.update(input('Position: '))
-
-	game.present_result()'''
-
-	app = App()
+	app = App(GUI())
 	app.run()

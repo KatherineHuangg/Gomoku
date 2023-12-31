@@ -1,9 +1,10 @@
 class Game:
-	def __init__(self, players):
+	def __init__(self, players, presenter):
 		self.finished = False
 		self.players = players
-		for player in players:
-			player.join_game(self)
+		self.presenter = presenter
+		for side, player in enumerate(players):
+			player.join_game(self, side + 1)
 
 		self.to_next = False
 		self.curr_player = 0
@@ -63,25 +64,18 @@ class Game:
 		col = ord(col.upper()) - ord('A')
 
 		if not self.is_in_range((row, col)) or self.board[row][col] != 0:
-			print('Invalid Input')
-			return
+			self.presenter.present_error('Invalid Input')
+			return False
 
 		sym = self.curr_player + 1
 		self.board[row][col] = sym
 		self.check_finish(sym, (row, col))
 		self.to_next = True
+		return True
 
 	def present(self):
-		symb = ['.', 'o', 'x']
-
-		print('   ' + ' '.join([chr(ord('A') + i) for i in range(19)]))
-		for i, row in enumerate(self.board):
-			print('%2d' % (19 - i), end = ' ')
-			for col in row:
-				print(symb[col], end = ' ')
-			print('%2d' % (19 - i))
-		print('   ' + ' '.join([chr(ord('A') + i) for i in range(19)]))
+		self.presenter.present_board(self.board)
 
 	def present_result(self):
 		if self.winner is not None:
-			print('Winner: Player %d' % (self.winner + 1))
+			self.presenter.present_end_result('Winner: Player %d' % (self.winner + 1))
