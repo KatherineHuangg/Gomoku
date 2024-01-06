@@ -11,6 +11,7 @@ class Game:
 		self.winner = None
 
 		self.board = [[0 for j in range(19)] for i in range(19)]
+		self.presenter.present_board(self.board)
 
 	def is_finish(self):
 		return self.finished

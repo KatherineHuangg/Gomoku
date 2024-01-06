@@ -1,6 +1,7 @@
 from game import Game
 from ui import CLI, GUI
 import socket
+import select
 from player import *
 
 class App:
@@ -23,6 +24,10 @@ class App:
 					game = self.new_game()
 				case 1:
 					game = self.join_game()
+				###new
+				case 2:
+					toQuit = True
+					break
 				case _:
 					self.ui.present_error('Invalid command')
 					continue
@@ -35,6 +40,8 @@ class App:
 			game.present()
 			game.present_result()
 
+			self.ui.reset()
+
 	def new_game(self):
 		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		s.connect(('8.8.8.8', 53))
@@ -46,8 +53,17 @@ class App:
 
 		self.ui.present_conn_info(self_ip, s.getsockname()[1])
 
-		self.ui.hold('Wait for opponent to join')
-		conn, addr = s.accept()
+		self.ui.hold('Wait for opponent to join...')
+		
+		rl = [s]
+		done = False
+		while not done:
+			r, _, _ = select.select(rl, [], [], 0.01)
+			for rb in r:
+				if rb is s:
+					conn, addr = s.accept()
+					done = True
+			self.ui.poll_input()
 		self.ui.unhold()
 
 		player1 = LocalPlayer(conn, self.ui)
